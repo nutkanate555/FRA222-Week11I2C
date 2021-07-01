@@ -56,7 +56,7 @@ uint8_t IOExpdrDataReadBack;
 uint8_t IOExpdrDataWrite = 0b01010101;
 uint8_t Miracle_blue_button[2] = {1,1};
 uint8_t SystemState = 0;
-
+uint8_t LaserCommandFlag = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -112,14 +112,14 @@ int main(void)
   /* USER CODE BEGIN 2 */
   HAL_Delay(100);
   IOExpenderInit();
-
-  HAL_I2C_Mem_Read_IT(&hi2c1, EEPROM_ADDR, 0x17, I2C_MEMADD_SIZE_16BIT, eepromDataReadBack , 1);
-  HAL_Delay(10);
-  {
-		uint8_t data = (eepromDataReadBack[0] & 0xff) | 0xf0;
-		HAL_I2C_Mem_Write_IT(&hi2c1, IOEXPD_ADDR, 0x15, I2C_MEMADD_SIZE_8BIT,&data, 1);
-  }
-  HAL_Delay(10);
+//
+//  HAL_I2C_Mem_Read_IT(&hi2c1, EEPROM_ADDR, 0x17, I2C_MEMADD_SIZE_16BIT, eepromDataReadBack , 1);
+//  HAL_Delay(10);
+//  {
+//		uint8_t data = (eepromDataReadBack[0] & 0xff) | 0xf0;
+//		HAL_I2C_Mem_Write_IT(&hi2c1, IOEXPD_ADDR, 0x15, I2C_MEMADD_SIZE_8BIT,&data, 1);
+//  }
+//  HAL_Delay(10);
 
   /* USER CODE END 2 */
 
@@ -127,49 +127,57 @@ int main(void)
   /* USER CODE BEGIN WHILE */
 	while (1) {
 
-		Miracle_blue_button[0] = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13);
-		if ((Miracle_blue_button[0] == 0) && (Miracle_blue_button[1] == 1) && (SystemState == 0) && (hi2c1.State ==HAL_I2C_STATE_READY))
-		{
-
-			HAL_I2C_Mem_Read_IT(&hi2c1, IOEXPD_ADDR, 0x12, I2C_MEMADD_SIZE_8BIT, &IOExpdrDataReadBack, 1);   /// Read IOExpdr
-			HAL_Delay(10);
-			SystemState = 1;
-		}
-		else if ((SystemState == 1) && (hi2c1.State == HAL_I2C_STATE_READY))
-		{
-			///write to epprom
+//		Miracle_blue_button[0] = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13);
+//		if ((Miracle_blue_button[0] == 0) && (Miracle_blue_button[1] == 1) && (SystemState == 0) && (hi2c1.State ==HAL_I2C_STATE_READY))
+//		{
+//
+//			HAL_I2C_Mem_Read_IT(&hi2c1, IOEXPD_ADDR, 0x12, I2C_MEMADD_SIZE_8BIT, &IOExpdrDataReadBack, 1);   /// Read IOExpdr
+//			HAL_Delay(10);
+//			SystemState = 1;
+//		}
+//		else if ((SystemState == 1) && (hi2c1.State == HAL_I2C_STATE_READY))
+//		{
+//			///write to epprom
+//			{
+//				uint8_t data[1];
+//				data[0] = IOExpdrDataReadBack & 0xff;
+//				HAL_I2C_Mem_Write_IT(&hi2c1, EEPROM_ADDR, 0x17, I2C_MEMADD_SIZE_16BIT, data, 1);
+//
+//			}
+//			HAL_Delay(10);
+//			SystemState = 2;
+//		}
+//		else if ((SystemState == 2) && (hi2c1.State == HAL_I2C_STATE_READY))
+//		{
+//			{
+//				HAL_I2C_Mem_Read_IT(&hi2c1, EEPROM_ADDR, 0x17, I2C_MEMADD_SIZE_16BIT, eepromDataReadBack , 1);
+//			}
+//			HAL_Delay(10);
+//			SystemState = 3;
+//
+//
+//		}
+//		else if ((SystemState == 3) && (hi2c1.State == HAL_I2C_STATE_READY))
+//		{
+//			{
+//					uint8_t data = (eepromDataReadBack[0] & 0xff) | 0xf0;
+//					HAL_I2C_Mem_Write_IT(&hi2c1, IOEXPD_ADDR, 0x15, I2C_MEMADD_SIZE_8BIT,&data, 1);
+//			}
+//			HAL_Delay(10);
+//			SystemState = 0;
+//		}
+//
+//		Miracle_blue_button[1] = Miracle_blue_button[0];
+//
+//
+		if ((LaserCommandFlag != 0) && (hi2c1.State == HAL_I2C_STATE_READY))
 			{
-				uint8_t data[1];
-				data[0] = IOExpdrDataReadBack & 0xff;
-				HAL_I2C_Mem_Write_IT(&hi2c1, EEPROM_ADDR, 0x17, I2C_MEMADD_SIZE_16BIT, data, 1);
-
+				{
+					uint8_t temp[1] = {0x45};
+					HAL_I2C_Master_Transmit_IT(&hi2c1, 0x23 << 1, temp, 1);
+				}
+				LaserCommandFlag = 0;
 			}
-			HAL_Delay(10);
-			SystemState = 2;
-		}
-		else if ((SystemState == 2) && (hi2c1.State == HAL_I2C_STATE_READY))
-		{
-			{
-				HAL_I2C_Mem_Read_IT(&hi2c1, EEPROM_ADDR, 0x17, I2C_MEMADD_SIZE_16BIT, eepromDataReadBack , 1);
-			}
-			HAL_Delay(10);
-			SystemState = 3;
-
-
-		}
-		else if ((SystemState == 3) && (hi2c1.State == HAL_I2C_STATE_READY))
-		{
-			{
-					uint8_t data = (eepromDataReadBack[0] & 0xff) | 0xf0;
-					HAL_I2C_Mem_Write_IT(&hi2c1, IOEXPD_ADDR, 0x15, I2C_MEMADD_SIZE_8BIT,&data, 1);
-			}
-			HAL_Delay(10);
-			SystemState = 0;
-		}
-
-		Miracle_blue_button[1] = Miracle_blue_button[0];
-
-
 
 
 
